@@ -57,7 +57,7 @@ The Data Warehouse follows the Medallion Architecture:
 - Data Modeling Practice Projects
 
 
-## 🔄 Data Pipeline (High-Level)
+## 🔄 Data Pipeline
 1. Ingest raw Yelp JSON datasets into Bronze tables
 2. Transform and clean data into Silver layer
 3. Build analytical models in Gold layer
