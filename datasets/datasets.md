@@ -12,5 +12,5 @@ Files:
 - yelp_academic_dataset_review.json
 - yelp_academic_dataset_user.json
 - yelp_academic_dataset_checkin.json (not used in this project)
-- yelp_academic_dataset_tip.json (not used in this project)
+- yelp_academic_dataset_tip.json (not used in this project)  
 Photos dataset was not included in this project.
