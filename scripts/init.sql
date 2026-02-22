@@ -14,10 +14,7 @@ This script initializes a PostgreSQL data warehouse environment by:
 
 Execution Requirements:
 This script MUST be executed using the PostgreSQL CLI (psql).
-It uses psql meta-commands (\gexec, \c) which are NOT supported in:
-- DBeaver
-- pgAdmin
-- Any GUI SQL client
+It uses psql meta-commands (\gexec, \c) which are NOT supported in GUI SQL clients.
 
 How to Run:
 From terminal:
@@ -27,7 +24,6 @@ From terminal:
 - The script should be run while connected to a default database
   (e.g., postgres), NOT to the target datawarehouse database.
 - Safe to re-run.
-
 ===============================================================================
 */
 
@@ -43,4 +39,5 @@ WHERE NOT EXISTS (
 -- Create schemas
 CREATE SCHEMA IF NOT EXISTS bronze;
 CREATE SCHEMA IF NOT EXISTS silver;
+
 CREATE SCHEMA IF NOT EXISTS gold;
