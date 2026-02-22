@@ -65,5 +65,5 @@ The Data Warehouse follows the Medallion Architecture:
 
 
 ## 📜 License
-This project was created under MIT License and uses publicly available Yelp Open Dataset. Only for academic use.
+This project was created under MIT License and uses publicly available Yelp Open Dataset, only for academic use.
   
