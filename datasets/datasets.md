@@ -1,7 +1,6 @@
 ## Dataset
 Source: Yelp Open Dataset  
 Link: https://business.yelp.com/data/resources/open-dataset/  
-*
 
 ### Extract files
 The .zip file contains dataset documentation and 1 TAR file.  
@@ -12,5 +11,5 @@ Files:
 - yelp_academic_dataset_review.json
 - yelp_academic_dataset_user.json
 - yelp_academic_dataset_checkin.json (not used in this project)
-- yelp_academic_dataset_tip.json (not used in this project)  
-Photos dataset was not included in this project.
+- yelp_academic_dataset_tip.json (not used in this project)
+- Photos dataset was not used in this project.
