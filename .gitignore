@@ -1,11 +1,6 @@
 # Environment variables
 .env
 
-# Data files (large JSON datasets)
-data/
-*.json
-*.csv
-
 # Logs
 *.log
 
@@ -13,5 +8,5 @@ data/
 .DS_Store
 Thumbs.db
 
-# VS Code settings (optional)
+# VS Code settings
 .vscode/
