@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Data files (large JSON datasets)
+data/
+*.json
+*.csv
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code settings (optional)
+.vscode/
