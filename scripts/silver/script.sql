@@ -42,18 +42,15 @@
 
  -REQUIRED VARIABLES
 
- This script expects psql variables:
+ Replace in the SQL script:
 
-   DATA_PATH     → directory containing dataset files
-   BUSINESS_FILE → business dataset filename
-   REVIEW_FILE   → review dataset filename
-   USER_FILE     → user dataset filename
+   BUSINESS_FILE → business dataset local directory
+   REVIEW_FILE   → review dataset local directory
+   USER_FILE     → user dataset local directory
 
- Example:
-   \set DATA_PATH 'C:/data/yelp'
-   \set BUSINESS_FILE 'yelp_academic_dataset_business.json'
-   \set REVIEW_FILE   'yelp_academic_dataset_review.json'
-   \set USER_FILE     'yelp_academic_dataset_user.json'
+ Or set variables and add them to the .env file
+   :'BUSINESS_FILE' 'C:/data/yelp'
+
 
 -HOW TO RUN
  This script MUST be executed using psql (not DBeaver or GUI tools),
@@ -75,9 +72,9 @@
    \set REVIEW_FILE   'yelp_academic_dataset_review.json'
    \set USER_FILE     'yelp_academic_dataset_user.json'
 
-   \i path/to/bronze_load.sql
+   \i path/to/script.sql
 
- Check tests folder to validate data
+ Check tests folder for data validation
  =====================================================
 */
 
@@ -102,29 +99,8 @@ CREATE TABLE IF NOT EXISTS bronze.yelp_user (
 
 SET synchronous_commit = OFF;
 
-\copy bronze.yelp_business(raw_json)
-FROM :'DATA_PATH'/'BUSINESS_FILE'
-WITH (FORMAT csv,
-    DELIMITER E'\x01', 
-    QUOTE E'\x02', 
-    ESCAPE E'\x03', 
-    ENCODING 'UTF8'
-);
+\copy bronze.yelp_business(raw_json) FROM <BUSINESS_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 
-\copy bronze.yelp_review(raw_json)
-FROM :'DATA_PATH'/'REVIEW_FILE'
-WITH (FORMAT csv,
-    DELIMITER E'\x01', 
-    QUOTE E'\x02', 
-    ESCAPE E'\x03', 
-    ENCODING 'UTF8'
-);
+\copy bronze.yelp_review(raw_json) FROM <REVIEW_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 
-\copy bronze.yelp_user(raw_json)
-FROM :'DATA_PATH'/'USER_FILE'
-WITH (FORMAT csv,
-    DELIMITER E'\x01', 
-    QUOTE E'\x02', 
-    ESCAPE E'\x03', 
-    ENCODING 'UTF8'
-);
+\copy bronze.yelp_user(raw_json) FROM <USER_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
