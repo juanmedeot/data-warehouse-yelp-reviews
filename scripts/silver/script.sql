@@ -99,8 +99,11 @@ CREATE TABLE IF NOT EXISTS bronze.yelp_user (
 
 SET synchronous_commit = OFF;
 
+TRUNCATE TABLE bronze.yelp_business;
 \copy bronze.yelp_business(raw_json) FROM <BUSINESS_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 
+TRUNCATE TABLE bronze.yelp_review;
 \copy bronze.yelp_review(raw_json) FROM <REVIEW_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 
+TRUNCATE TABLE bronze.yelp_user;
 \copy bronze.yelp_user(raw_json) FROM <USER_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
