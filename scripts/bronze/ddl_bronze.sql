@@ -1,0 +1,21 @@
+
+
+
+
+CREATE TABLE IF NOT EXISTS bronze.yelp_business (
+    id BIGSERIAL PRIMARY KEY,
+    raw_json JSONB NOT NULL,
+    ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS bronze.yelp_review (
+    id BIGSERIAL PRIMARY KEY,
+    raw_json JSONB NOT NULL,
+    ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS bronze.yelp_user (
+    id BIGSERIAL PRIMARY KEY,
+    raw_json JSONB NOT NULL,
+    ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
