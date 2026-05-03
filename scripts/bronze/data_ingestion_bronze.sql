@@ -1,6 +1,6 @@
 /* 
 =====================================================
- BRONZE LAYER INGESTION SCRIPT (YELP DATASET)
+Bronze Layer Ingestion Script
 =====================================================
 
  PURPOSE
