@@ -11,17 +11,22 @@ Bronze Layer Ingestion Script
  Each row in the source files is a JSON object (NDJSON format),
  and is stored as-is in a single JSONB column (`raw_json`).
 
+ WARNING: this script deletes all data in bronze layer tables before ingestions. Run with caution.
+
  -WHAT THIS SCRIPT DOES
 
  1. Disables synchronous_commit:
     - Improves bulk load performance
     - Safe for batch ingestion (may risk minimal data loss if crash occurs)
 
- 2. Loads data using \copy (psql meta-command):
+ 2. Truncates data form bronze layer tables:
+    - Before loading data, deletes all previous data 
+    
+ 3. Loads data using \copy (psql meta-command):
     - Reads local files (client-side)
     - Required when files are not accessible by the DB server
 
- 3. Uses a CSV "parsing bypass" technique:
+ 4. Uses a CSV "parsing bypass" technique:
     - FORMAT csv
     - DELIMITER, QUOTE, ESCAPE set to non-existing control characters
 
