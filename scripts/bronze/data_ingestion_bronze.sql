@@ -40,7 +40,7 @@ Bronze Layer Ingestion Script
 
 
 -HOW TO RUN
- This script MUST be executed using psql (not DBeaver or GUI tools),
+ This script MUST be executed using psql (not GUI tools),
  because it uses the \copy meta-command.
 
  Option 1 — From terminal (recommended):
