@@ -70,14 +70,31 @@ Bronze Layer Ingestion Script
  =====================================================
 */
 
+\echo '====================================================='
+\echo 'Loading data into Bronze Layer Tables'
+\echo '====================================================='
 
+\echo '>> Disabling Synchronous Commit'
 SET synchronous_commit = OFF;
 
+\echo '>> Truncating table bronze.yelp_business'
 TRUNCATE TABLE bronze.yelp_business;
+
+\echo '>> Copying data into bronze.yelp_business table'
 \copy bronze.yelp_business(raw_json) FROM <BUSINESS_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 
+\echo '>> Truncating table bronze.yelp_review'
 TRUNCATE TABLE bronze.yelp_review;
+
+\echo '>> Copying data into bronze.yelp_review table'
 \copy bronze.yelp_review(raw_json) FROM <REVIEW_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 
+\echo '>> Truncating table bronze.yelp_user'
 TRUNCATE TABLE bronze.yelp_user;
+
+\echo '>> Copying data into bronze.yelp_user table'
 \copy bronze.yelp_user(raw_json) FROM <USER_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
+
+\echo '====================================================='
+\echo 'Loading data into Bronze Layer Tables Completed'
+\echo '====================================================='
