@@ -48,23 +48,9 @@ Bronze Layer Ingestion Script
  This script MUST be executed using psql (not GUI tools),
  because it uses the \copy meta-command.
 
- Option 1 — From terminal (recommended):
+ From terminal:
 
-   psql -U <user> -d datawarehouse \
-     -v DATA_PATH="'files_path'" \
-     -v BUSINESS_FILE="'yelp_academic_dataset_business.json'" \
-     -v REVIEW_FILE="'yelp_academic_dataset_review.json'" \
-     -v USER_FILE="'yelp_academic_dataset_user.json'" \
-     -f data_ingestion_bronze.sql
-
- Option 2 — Inside psql:
-
-   \set DATA_PATH 'files_path'
-   \set BUSINESS_FILE 'yelp_academic_dataset_business.json'
-   \set REVIEW_FILE   'yelp_academic_dataset_review.json'
-   \set USER_FILE     'yelp_academic_dataset_user.json'
-
-   \i path/to/data_ingestion_bronze.sql
+   psql -h <host> -U <user> -d datawarehouse -f "path\data_ingestion_bronze.sql"
 
  Check tests folder for data validation
  =====================================================
