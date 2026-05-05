@@ -54,6 +54,9 @@ Bronze Layer Ingestion Script
 
  =====================================================
 */
+\set ON_ERROR_STOP on
+BEGIN;
+
 SELECT clock_timestamp() AS start_time_batch \gset
 \echo '====================================================='
 \echo 'Loading data into Bronze Layer Tables'
@@ -94,7 +97,8 @@ TRUNCATE TABLE bronze.yelp_user;
 \copy bronze.yelp_user(raw_json) FROM <USER_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 SELECT (clock_timestamp() - :'start_time_user') as diff_user \gset
 \echo '>> Load Time:' :diff_user
-
+COMMIT;
+ 
 SELECT (clock_timestamp() - :'start_time_batch') as diff_total \gset
 \echo '====================================================='
 \echo 'Loading data into Bronze Layer Tables Completed'
