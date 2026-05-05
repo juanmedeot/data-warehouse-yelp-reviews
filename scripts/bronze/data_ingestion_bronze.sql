@@ -52,7 +52,6 @@ Bronze Layer Ingestion Script
 
    psql -h <host> -U <user> -d datawarehouse -f "path\data_ingestion_bronze.sql"
 
- Check tests folder for data validation
  =====================================================
 */
 
