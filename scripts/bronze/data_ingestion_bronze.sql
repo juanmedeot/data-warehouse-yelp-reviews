@@ -62,6 +62,8 @@ SELECT clock_timestamp() AS start_time_batch \gset
 \echo '>> Disabling Synchronous Commit'
 SET synchronous_commit = OFF;
 
+\echo '-----------------------------------------------------'
+ 
 SELECT clock_timestamp() AS start_time_business \gset
 \echo '>> Truncating table bronze.yelp_business'
 TRUNCATE TABLE bronze.yelp_business;
@@ -71,6 +73,8 @@ TRUNCATE TABLE bronze.yelp_business;
 SELECT (clock_timestamp() - :'start_time_business') as diff_business \gset
 \echo '>> Load Time:' :diff_business 'seconds'
 
+\echo '-----------------------------------------------------'
+ 
 SELECT clock_timestamp() AS start_time_review \gset
 \echo '>> Truncating table bronze.yelp_review'
 TRUNCATE TABLE bronze.yelp_review;
@@ -79,6 +83,8 @@ TRUNCATE TABLE bronze.yelp_review;
 \copy bronze.yelp_review(raw_json) FROM <REVIEW_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 SELECT (clock_timestamp() - :'start_time_review') as diff_review \gset
 \echo '>> Load Time:' :diff_review 'seconds'
+
+\echo '-----------------------------------------------------'
 
 SELECT clock_timestamp() AS start_time_user \gset
 \echo '>> Truncating table bronze.yelp_user'
