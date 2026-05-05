@@ -71,7 +71,7 @@ TRUNCATE TABLE bronze.yelp_business;
 \echo '>> Copying data into bronze.yelp_business table'
 \copy bronze.yelp_business(raw_json) FROM <BUSINESS_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 SELECT (clock_timestamp() - :'start_time_business') as diff_business \gset
-\echo '>> Load Time:' :diff_business 'seconds'
+\echo '>> Load Time:' :diff_business
 
 \echo '-----------------------------------------------------'
  
@@ -82,7 +82,7 @@ TRUNCATE TABLE bronze.yelp_review;
 \echo '>> Copying data into bronze.yelp_review table'
 \copy bronze.yelp_review(raw_json) FROM <REVIEW_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 SELECT (clock_timestamp() - :'start_time_review') as diff_review \gset
-\echo '>> Load Time:' :diff_review 'seconds'
+\echo '>> Load Time:' :diff_review
 
 \echo '-----------------------------------------------------'
 
@@ -93,10 +93,10 @@ TRUNCATE TABLE bronze.yelp_user;
 \echo '>> Copying data into bronze.yelp_user table'
 \copy bronze.yelp_user(raw_json) FROM <USER_FILE> WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02', ESCAPE E'\x03', ENCODING 'UTF8');
 SELECT (clock_timestamp() - :'start_time_user') as diff_user \gset
-\echo '>> Load Time:' :diff_user 'seconds'
+\echo '>> Load Time:' :diff_user
 
 SELECT (clock_timestamp() - :'start_time_batch') as diff_total \gset
 \echo '====================================================='
 \echo 'Loading data into Bronze Layer Tables Completed'
-\echo 'Total Load Time:' :diff_total 'seconds'
+\echo 'Total Load Time:' :diff_total
 \echo '====================================================='
