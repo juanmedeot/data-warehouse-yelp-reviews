@@ -23,12 +23,12 @@
 
 
 CREATE TABLE IF NOT EXISTS silver.yelp_business (
-    business_id VARCHAR(22) PRIMARY KEY,
+    business_id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255),
     address VARCHAR(255),
-    city VARCHAR(100),
-    state VARCHAR(2),
-    postal_code VARCHAR(20),
+    city VARCHAR(255),
+    state VARCHAR(255),
+    postal_code VARCHAR(255),
     latitude NUMERIC(9,6),
     longitude NUMERIC(9,6),
     stars NUMERIC(3,1),
@@ -41,10 +41,10 @@ CREATE TABLE IF NOT EXISTS silver.yelp_business (
 );
 
 CREATE TABLE IF NOT EXISTS silver.yelp_review (
-    review_id VARCHAR(22) PRIMARY KEY,
-    user_id VARCHAR(22),
-    business_id VARCHAR(22),
-    stars INTEGER,
+    review_id VARCHAR(255) PRIMARY KEY,
+    user_id VARCHAR(255),
+    business_id VARCHAR(255),
+    stars NUMERIC(3,1),
     date DATE,
     text TEXT,
     useful INTEGER,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS silver.yelp_review (
 );
 
 CREATE TABLE IF NOT EXISTS silver.yelp_user (
-    user_id VARCHAR(22) PRIMARY KEY,
+    user_id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255),
     review_count INTEGER,
     yelping_since DATE,
@@ -78,3 +78,4 @@ CREATE TABLE IF NOT EXISTS silver.yelp_user (
     compliment_photos INTEGER,
     ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
