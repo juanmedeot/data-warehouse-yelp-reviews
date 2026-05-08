@@ -1,6 +1,6 @@
 /* 
 =====================================================
-Bronze Layer Ingestion Script
+Bronze Layer Loading Script
 =====================================================
 
  PURPOSE
