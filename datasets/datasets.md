@@ -2,7 +2,7 @@
 Source: Yelp Open Dataset  
 Link: https://business.yelp.com/data/resources/open-dataset/  
 
-### Extract files
+### Files extraction
 The .zip file contains dataset documentation and 1 TAR file.  
 In windows, to extract the TAR file, open Comand Prompt and use `tar -xvf yelp_dataset.tar`  
 Files:
