@@ -49,7 +49,7 @@ BEGIN;
 
 SELECT clock_timestamp() AS start_time_batch \gset
 \echo '====================================================='
-\echo 'Loading data into Silver Layer Tables'
+\echo 'Loading data into Silver Layer'
 \echo '====================================================='
 
 \echo '>> Disabling Synchronous Commit'
@@ -62,7 +62,7 @@ SELECT clock_timestamp() AS start_time_business \gset
 
 TRUNCATE TABLE silver.yelp_business;
 
-\echo '>> Copying data into silver.yelp_business'
+\echo '>> Loading data into silver.yelp_business'
 
 INSERT INTO silver.yelp_business (
     business_id,
@@ -108,7 +108,7 @@ SELECT clock_timestamp() AS start_time_review \gset
 
 TRUNCATE TABLE silver.yelp_review;
 
-\echo '>> Copying data into silver.yelp_review'
+\echo '>> Loading data into silver.yelp_review'
 
 INSERT INTO silver.yelp_review (
     review_id, user_id, business_id, stars, date, text, useful, funny, cool
@@ -136,7 +136,7 @@ SELECT clock_timestamp() AS start_time_user \gset
 
 TRUNCATE TABLE silver.yelp_user;
 
-\echo '>> Copying data into silver.yelp_user table'
+\echo '>> Loading data into silver.yelp_user table'
 INSERT INTO silver.yelp_user (
     user_id, name, review_count, yelping_since, friends, useful, funny, cool, 
     fans, elite, average_stars, compliment_hot, compliment_more, 
@@ -177,6 +177,6 @@ COMMIT;
 
 SELECT (clock_timestamp() - :'start_time_batch') as diff_total \gset
 \echo '====================================================='
-\echo 'Loading data into Silver Layer Tables Completed'
+\echo 'Loading data into Silver Layer Completed'
 \echo 'Total Load Time:' :diff_total
 \echo '====================================================='
