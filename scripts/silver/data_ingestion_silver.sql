@@ -95,8 +95,7 @@ SELECT
     raw_json -> 'attributes',
     raw_json ->> 'categories',
     raw_json -> 'hours'
-FROM bronze.yelp_business
-ON CONFLICT (business_id) DO NOTHING;
+FROM bronze.yelp_business;
 
 SELECT (clock_timestamp() - :'start_time_business') as diff_business \gset
 \echo '>> Load Time:' :diff_business
@@ -123,8 +122,7 @@ SELECT
     (raw_json ->> 'useful')::INTEGER,
     (raw_json ->> 'funny')::INTEGER,
     (raw_json ->> 'cool')::INTEGER
-FROM bronze.yelp_review
-ON CONFLICT (review_id) DO NOTHING;
+FROM bronze.yelp_review;
 
 SELECT (clock_timestamp() - :'start_time_review') as diff_review \gset
 \echo '>> Load Time:' :diff_review
@@ -167,8 +165,7 @@ SELECT
     (raw_json ->> 'compliment_funny')::INTEGER,
     (raw_json ->> 'compliment_writer')::INTEGER,
     (raw_json ->> 'compliment_photos')::INTEGER
-FROM bronze.yelp_user
-ON CONFLICT (user_id) DO NOTHING;
+FROM bronze.yelp_user;
 
 SELECT (clock_timestamp() - :'start_time_user') as diff_user \gset
 \echo '>> Load Time:' :diff_user
