@@ -82,19 +82,19 @@ INSERT INTO silver.yelp_business (
 )
 SELECT 
     raw_json ->> 'business_id',
-    raw_json ->> 'name',
-    raw_json ->> 'address',
-    raw_json ->> 'city',
-    raw_json ->> 'state',
-    raw_json ->> 'postal_code',
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'name'),''),'null'),'N/A'),
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'address'),''),'null'),'N/A'),
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'city'),''),'null'),'N/A'),
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'state'),''),'null'),'N/A'),
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'postal_code'),''),'null'),'N/A'),
     (raw_json ->> 'latitude')::NUMERIC(9,6),
     (raw_json ->> 'longitude')::NUMERIC(9,6),
     (raw_json ->> 'stars')::NUMERIC(3,1),
     (raw_json ->> 'review_count')::INTEGER,
     (raw_json ->> 'is_open')::INTEGER,
-    raw_json -> 'attributes',
-    raw_json ->> 'categories',
-    raw_json -> 'hours'
+    (NULLIF(raw_json ->> 'attributes', 'null'))::JSONB AS attributes,
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'categories'), ''), 'null'), 'N/A') AS categories,
+    (NULLIF(raw_json ->> 'hours', 'null'))::JSONB AS hours
 FROM bronze.yelp_business;
 
 SELECT (clock_timestamp() - :'start_time_business') as diff_business \gset
