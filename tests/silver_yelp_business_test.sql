@@ -19,8 +19,7 @@ How to run:
  This script uses psql meta-command (\echo).
 
  From terminal:
-
-   psql -h <host> -U <user> -d datawarehouse -f "path\silver_yelp_business_test.sql"
+ psql -h <host> -U <user> -d datawarehouse -f "path\silver_yelp_business_test.sql"
 
 ===============================================================================
 */
