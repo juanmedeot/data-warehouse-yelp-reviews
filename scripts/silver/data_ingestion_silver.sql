@@ -118,10 +118,19 @@ SELECT
     raw_json ->> 'business_id',
     (raw_json ->> 'stars')::INTEGER,
     (raw_json ->> 'date')::DATE,
-    raw_json ->> 'text',
-    (raw_json ->> 'useful')::INTEGER,
-    (raw_json ->> 'funny')::INTEGER,
-    (raw_json ->> 'cool')::INTEGER
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'text'), ''), 'null'), 'N/A') AS text,
+    CASE  
+        WHEN (raw_json ->> 'useful')::INTEGER < 0 THEN 0
+        ELSE (raw_json ->> 'useful')::INTEGER
+        END AS useful,
+    CASE  
+        WHEN (raw_json ->> 'funny')::INTEGER < 0 THEN 0
+        ELSE (raw_json ->> 'funny')::INTEGER
+        END AS funny,
+    CASE  
+        WHEN (raw_json ->> 'cool')::INTEGER < 0 THEN 0
+        ELSE (raw_json ->> 'cool')::INTEGER
+        END AS cool
 FROM bronze.yelp_review;
 
 SELECT (clock_timestamp() - :'start_time_review') as diff_review \gset
