@@ -116,7 +116,7 @@ SELECT
     raw_json ->> 'review_id',
     raw_json ->> 'user_id',
     raw_json ->> 'business_id',
-    (raw_json ->> 'stars')::NUMERIC,
+    (raw_json ->> 'stars')::INTEGER,
     (raw_json ->> 'date')::DATE,
     raw_json ->> 'text',
     (raw_json ->> 'useful')::INTEGER,
