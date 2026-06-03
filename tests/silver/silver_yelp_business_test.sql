@@ -1,6 +1,6 @@
 /*
 ===============================================================================
-Data Quality Checks - Silver Layer (yelp_business)
+Data Quality Checks - Silver Layer (yelp_busine
 ===============================================================================
 Script Purpose: 
     This script performs several data quality checks on the silver.yelp_business 
