@@ -29,11 +29,6 @@ Silver Layer Transformation & Loading Script
     - Converts data to appropriate SQL types: DATE, INTEGER, NUMERIC, and JSONB.
     - Specifically handles coordinate precision (9,6) and star ratings.
 
- 4. Data Cleansing (Deduplication):
-    - Uses `ON CONFLICT (id) DO NOTHING` as a safety measure.
-    - Ensures that any duplicated business_id, review_id, or user_id 
-      coming from the source is filtered out during ingestion.
-
 - HOW TO RUN
  This script uses psql meta-commands (\echo, \gset).
 
