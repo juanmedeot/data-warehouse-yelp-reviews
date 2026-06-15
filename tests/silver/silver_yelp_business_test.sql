@@ -62,9 +62,6 @@ WHERE
 	stars IS NULL OR 
 	review_count IS NULL OR
 	is_open IS NULL OR 
-	attributes = 'null' OR 
-	categories IS NULL OR categories = 'null' OR categories = '' OR 
-	hours = 'null' OR
 	ingested_at IS NULL;
 
 -- 4. Geolocation Boundaries
