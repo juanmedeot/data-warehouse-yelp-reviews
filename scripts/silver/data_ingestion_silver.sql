@@ -92,9 +92,9 @@ SELECT
     (raw_json ->> 'stars')::NUMERIC(3,1),
     (raw_json ->> 'review_count')::INTEGER,
     (raw_json ->> 'is_open')::INTEGER,
-    (NULLIF(raw_json ->> 'attributes', 'null'))::JSONB AS attributes,
-    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'categories'), ''), 'null'), 'N/A') AS categories,
-    (NULLIF(raw_json ->> 'hours', 'null'))::JSONB AS hours
+    raw_json -> 'attributes',
+    raw_json ->> 'categories',
+    raw_json -> 'hours'
 FROM bronze.yelp_business;
 
 SELECT (clock_timestamp() - :'start_time_business') as diff_business \gset
@@ -116,21 +116,12 @@ SELECT
     raw_json ->> 'review_id',
     raw_json ->> 'user_id',
     raw_json ->> 'business_id',
-    (raw_json ->> 'stars')::INTEGER,
+    (raw_json ->> 'stars'):::NUMERIC::INTEGER,
     (raw_json ->> 'date')::DATE,
-    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'text'), ''), 'null'), 'N/A') AS text,
-    CASE  
-        WHEN (raw_json ->> 'useful')::INTEGER < 0 THEN 0
-        ELSE (raw_json ->> 'useful')::INTEGER
-        END AS useful,
-    CASE  
-        WHEN (raw_json ->> 'funny')::INTEGER < 0 THEN 0
-        ELSE (raw_json ->> 'funny')::INTEGER
-        END AS funny,
-    CASE  
-        WHEN (raw_json ->> 'cool')::INTEGER < 0 THEN 0
-        ELSE (raw_json ->> 'cool')::INTEGER
-        END AS cool
+    raw_json ->> 'text',
+    CASE WHEN (raw_json ->> 'useful')::INTEGER < 0 THEN 0 ELSE (raw_json ->> 'useful')::INTEGER END AS useful,
+    CASE WHEN (raw_json ->> 'funny')::INTEGER < 0 THEN 0 ELSE (raw_json ->> 'funny')::INTEGER END AS funny,
+    CASE WHEN (raw_json ->> 'cool')::INTEGER < 0 THEN 0 ELSE (raw_json ->> 'cool')::INTEGER END AS cool
 FROM bronze.yelp_review;
 
 SELECT (clock_timestamp() - :'start_time_review') as diff_review \gset
@@ -153,27 +144,27 @@ INSERT INTO silver.yelp_user (
 )
 SELECT 
     raw_json ->> 'user_id',
-    raw_json ->> 'name',
-    (raw_json ->> 'review_count')::INTEGER,
+    COALESCE(NULLIF(NULLIF(TRIM(raw_json ->> 'name'), ''), 'null'), 'N/A') AS name,
+    CASE WHEN (raw_json ->> 'review_count')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'review_count')::INTEGER END AS review_count,
     (raw_json ->> 'yelping_since')::DATE,
     raw_json -> 'friends', -- Se mantiene como objeto JSONB
-    (raw_json ->> 'useful')::INTEGER,
-    (raw_json ->> 'funny')::INTEGER,
-    (raw_json ->> 'cool')::INTEGER,
-    (raw_json ->> 'fans')::INTEGER,
+    CASE WHEN (raw_json ->> 'useful')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'useful')::INTEGER END AS useful,
+    CASE WHEN (raw_json ->> 'funny')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'funny')::INTEGER END AS funny,
+    CASE WHEN (raw_json ->> 'cool')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'cool')::INTEGER END AS cool,
+    CASE WHEN (raw_json ->> 'fans')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'fans')::INTEGER END AS fans,
     raw_json -> 'elite', -- Se mantiene como objeto JSONB
-    (raw_json ->> 'average_stars')::NUMERIC(3,2),
-    (raw_json ->> 'compliment_hot')::INTEGER,
-    (raw_json ->> 'compliment_more')::INTEGER,
-    (raw_json ->> 'compliment_profile')::INTEGER,
-    (raw_json ->> 'compliment_cute')::INTEGER,
-    (raw_json ->> 'compliment_list')::INTEGER,
-    (raw_json ->> 'compliment_note')::INTEGER,
-    (raw_json ->> 'compliment_plain')::INTEGER,
-    (raw_json ->> 'compliment_cool')::INTEGER,
-    (raw_json ->> 'compliment_funny')::INTEGER,
-    (raw_json ->> 'compliment_writer')::INTEGER,
-    (raw_json ->> 'compliment_photos')::INTEGER
+    CASE WHEN (raw_json ->> 'average_stars')::NUMERIC(3,2) < 1.00 OR (raw_json ->> 'average_stars')::NUMERIC(3,2) > 5.00 THEN NULL ELSE (raw_json ->> 'average_stars')::NUMERIC(3,2) END AS average_stars,
+    CASE WHEN (raw_json ->> 'compliment_hot')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_hot')::INTEGER END AS compliment_hot,
+    CASE WHEN (raw_json ->> 'compliment_more')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_more')::INTEGER END AS compliment_more,
+    CASE WHEN (raw_json ->> 'compliment_profile')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_profile')::INTEGER END AS compliment_profile,
+    CASE WHEN (raw_json ->> 'compliment_cute')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_cute')::INTEGER END AS compliment_cute,
+    CASE WHEN (raw_json ->> 'compliment_list')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_list')::INTEGER END AS compliment_list,
+    CASE WHEN (raw_json ->> 'compliment_note')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_note')::INTEGER END AS compliment_note,
+    CASE WHEN (raw_json ->> 'compliment_plain')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_plain')::INTEGER END AS compliment_plain,
+    CASE WHEN (raw_json ->> 'compliment_cool')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_cool')::INTEGER END AS compliment_cool,
+    CASE WHEN (raw_json ->> 'compliment_funny')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_funny')::INTEGER END AS compliment_funny,
+    CASE WHEN (raw_json ->> 'compliment_writer')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_writer')::INTEGER END AS compliment_writer,
+    CASE WHEN (raw_json ->> 'compliment_photos')::INTEGER < 0 THEN NULL ELSE (raw_json ->> 'compliment_photos')::INTEGER END AS compliment_photos
 FROM bronze.yelp_user;
 
 SELECT (clock_timestamp() - :'start_time_user') as diff_user \gset
