@@ -34,29 +34,29 @@ How to run:
 --Expected result: 0
 \echo '>> Test 1: Row count difference (Bronze vs Silver)'
 \echo '>> Expected Result: 0'
-select count(*)-(select count(*) from bronze.yelp_review) AS bronze_silver_difference from silver.yelp_review
+SELECT COUNT(*)-(SELECT COUNT(*) FROM bronze.yelp_review) AS bronze_silver_difference FROM silver.yelp_review
 
 
 --Check duplicates review_id
 --Expected result: 0 rows
 \echo '>> Test 2: Duplicate review_id count'
 \echo '>> Expected Result: 0 rows'
-select count(*) from silver.yelp_review group by review_id having count(*) > 1
+SELECT COUNT(*) FROM silver.yelp_review GROUP BY review_id HAVING COUNT(*) > 1
 
 
 --Check if user_id exists in yelp_user table
 --Expected result: < 0.01% of total row count
 \echo '>> Test 3: Percentage of orphan reviews by user_id'
 \echo '>> Expected Result: < 0.01%'
-select round(100.0*count(*)/(select count(*) from silver.yelp_review),4) as perc_total_rows
-from silver.yelp_review r left join silver.yelp_user u on r.user_id=u.user_id where u.user_id is null
+SELECT round(100.0*COUNT(*)/(SELECT COUNT(*) FROM silver.yelp_review),4) AS perc_total_rows
+FROM silver.yelp_review r LEFT JOIN silver.yelp_user u ON r.user_id=u.user_id WHERE u.user_id IS NULL
 
 --Check if business_id exists in yelp_business table
 --Expected result: < 0.01% of total row count
 \echo '>> Test 4: Percentage of orphan reviews by business_id'
 \echo '>> Expected Result: < 0.01%'
-select round(100.0*count(*)/(select count(*) from silver.yelp_review),4) as perc_total_rows
-from silver.yelp_review r left join silver.yelp_business b on r.business_id=b.business_id where b.business_id is null
+SELECT round(100.0*COUNT(*)/(SELECT COUNT(*) FROM silver.yelp_review),4) AS perc_total_rows
+FROM silver.yelp_review r LEFT JOIN silver.yelp_business b ON r.business_id=b.business_id WHERE b.business_id IS NULL
 
 
 --Check null values and completeness
@@ -67,12 +67,12 @@ SELECT COUNT(*) AS total_missing_values
 FROM silver.yelp_review 
 WHERE 
 	review_id IS NULL OR review_id = 'null' OR review_id = '' OR
-	user_id IS NULL OR user_id = 'null' OR user_id = '' or
-	business_id IS NULL OR business_id = 'null' OR business_id = '' or
+	user_id IS NULL OR user_id = 'null' OR user_id = '' OR
+	business_id IS NULL OR business_id = 'null' OR business_id = '' OR
 	stars IS NULL OR 
 	date IS NULL OR
-	useful IS NULL or
-	funny IS NULL or
+	useful IS NULL OR
+	funny IS NULL OR
 	cool IS NULL OR
 	ingested_at IS NULL;
 
@@ -83,9 +83,9 @@ WHERE
 SELECT COUNT(*) AS spaces_rows
 FROM silver.yelp_review 
 WHERE 
-	trim(review_id) <> review_id or
-	trim(user_id) <> user_id or
-	trim(business_id) <> business_id or
+	trim(review_id) <> review_id OR
+	trim(user_id) <> user_id OR
+	trim(business_id) <> business_id OR
 	trim(text) <> text;
 
 
@@ -106,7 +106,7 @@ WHERE
 \echo '>> Expected Result: 0 rows'
 SELECT COUNT(*)
 FROM silver.yelp_review 
-where date < '2004-10-01' or date > CURRENT_DATE
+WHERE date < '2004-10-01' OR date > CURRENT_DATE
 
 --Check consistency and boundries in useful, funny and cool fields
 --Expected result: 0 rows
@@ -114,7 +114,7 @@ where date < '2004-10-01' or date > CURRENT_DATE
 \echo '>> Expected Result: 0 rows'
 SELECT COUNT(*)
 FROM silver.yelp_review 
-where 
+WHERE 
 	useful < 0 or
 	funny < 0 or
 	cool < 0;
