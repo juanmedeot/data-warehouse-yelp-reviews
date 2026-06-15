@@ -71,7 +71,6 @@ WHERE
 	business_id IS NULL OR business_id = 'null' OR business_id = '' or
 	stars IS NULL OR 
 	date IS NULL OR
-	text IS NULL OR text = 'null' OR text = '' OR 
 	useful IS NULL or
 	funny IS NULL or
 	cool IS NULL OR
