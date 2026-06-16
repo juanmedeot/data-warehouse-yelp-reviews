@@ -1,7 +1,7 @@
 
--- ============================================================================
--- DATA QUALITY SUITE: silver.yelp_user
--- ============================================================================
+\echo '====================================================='
+\echo 'STARTING DATA QUALITY TESTS: silver.yelp_user'
+\echo '====================================================='
 
 -- 1. Check bronze and silver # of rows
 -- Identifica si hubo pérdida de registros durante la migración o la ingesta.
