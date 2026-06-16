@@ -1,3 +1,31 @@
+/*
+===============================================================================
+Data Quality Checks - Silver Layer (yelp_user)
+===============================================================================
+Script Purpose: 
+    This script performs several data quality checks on the silver.yelp_user 
+    table to ensure data integrity, consistency, and accuracy after the 
+    ingestion process from the bronze layer.
+
+Checks performed:
+    1. Row count comparison between Bronze and Silver layers.
+    2. Primary Key (user_id) uniqueness.
+    3. Completeness (Missing/Null values and JSONB parsing leaks for critical fields).
+    4. Metric reliability (Percentage of NULL values across numeric metric fields).
+    5. Metric boundaries (Non-negative values for review counts, useful, fans, compliments, etc.).
+    6. Unwanted leading/trailing spaces detection in text and key fields.
+    7. Chronological boundaries for user registration dates (post-Yelp foundation).
+    8. Business logic consistency (Decimal average_stars ratings between 1.00 and 5.00).
+
+How to run:
+ This script uses psql meta-command (\echo).
+
+ From terminal:
+ psql -h <host> -U <user> -d datawarehouse -f "path\silver_yelp_user_test.sql"
+
+===============================================================================
+*/
+
 
 \echo '====================================================='
 \echo 'STARTING DATA QUALITY TESTS: silver.yelp_user'
@@ -106,3 +134,7 @@ WHERE yelping_since < '2004-10-01' OR yelping_since > CURRENT_DATE;
 SELECT COUNT(*) AS invalid_stars_count 
 FROM silver.yelp_user 
 WHERE average_stars < 1.00 OR average_stars > 5.00;
+
+\echo '====================================================='
+\echo 'DATA QUALITY TESTS COMPLETED'
+\echo '====================================================='
