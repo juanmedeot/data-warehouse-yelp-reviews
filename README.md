@@ -64,6 +64,6 @@ The Data Warehouse follows the Medallion Architecture:
 4. Use Gold datasets for dashboards and ML projects
 
 
-## 📜 License
+## License
 This project was created under MIT License and uses publicly available Yelp Open Dataset, only for academic use.
   
