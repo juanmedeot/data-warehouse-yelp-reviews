@@ -1,0 +1,391 @@
+/*
+===============================================================================
+Gold Layer - Yelp Data Warehouse (PostgreSQL)
+===============================================================================
+Strategy: Materialized Views (Full Truncate & Load)
+Model: Snowflake Schema with Surrogate Keys
+===============================================================================
+*/
+
+\set ON_ERROR_STOP on
+BEGIN;
+
+SELECT clock_timestamp() AS start_time_batch \gset
+\echo '====================================================='
+\echo 'Loading data into Gold Layer'
+\echo '====================================================='
+
+\echo '>> Disabling Synchronous Commit'
+SET synchronous_commit = OFF;
+
+\echo '-----------------------------------------------------'
+ 
+SELECT clock_timestamp() AS start_time_user \gset
+\echo '>> Droping table materialized view gold.dim_user'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_user CASCADE;
+
+\echo '>> Loading data into gold.dim_user'
+
+/*
+===============================================================================
+Materialized View: gold.dim_user
+===============================================================================
+Script Purpose:
+    Creates the user dimension for the Gold Layer (Snowflake Schema).
+    It generates a numeric surrogate key (user_key) and includes an 
+    Unknown Member (-1) row to handle orphan records from the fact table.
+
+Dependencies:
+- silver.yelp_user
+===============================================================================
+*/
+CREATE MATERIALIZED VIEW gold.dim_user as
+SELECT 
+    -1 AS user_key,
+    'UNKNOWN' AS user_id,
+    'UNKNOWN USER' AS name,
+    NULL::DATE AS yelping_since,
+    0 AS review_count,
+    0.00::NUMERIC(3, 2) AS average_stars,
+    0 AS useful,
+    0 AS funny,
+    0 AS cool,
+    0 AS fans,
+    0 AS compliment_hot, 
+    0 AS compliment_more, 
+    0 AS compliment_profile, 
+    0 AS compliment_cute, 
+    0 AS compliment_list, 
+    0 AS compliment_note, 
+    0 AS compliment_plain, 
+    0 AS compliment_cool, 
+    0 AS compliment_funny, 
+    0 AS compliment_writer, 
+    0 AS compliment_photos
+    
+UNION ALL
+
+SELECT 
+    ROW_NUMBER() OVER (ORDER BY user_id) AS user_key,
+    user_id,
+    name,
+    yelping_since,
+    review_count,
+    average_stars,
+    useful,
+    funny,
+    cool,
+    fans,
+    compliment_hot, 
+    compliment_more, 
+    compliment_profile, 
+    compliment_cute, 
+    compliment_list, 
+    compliment_note, 
+    compliment_plain, 
+    compliment_cool, 
+    compliment_funny, 
+    compliment_writer, 
+    compliment_photos
+FROM silver.yelp_user;
+
+CREATE UNIQUE INDEX idx_dim_user_key ON gold.dim_user(user_key);
+CREATE INDEX idx_dim_user_natural ON gold.dim_user(user_id);
+
+SELECT (clock_timestamp() - :'start_time_user') as diff_user \gset
+\echo '>> Load Time:' :diff_user
+
+\echo '-----------------------------------------------------'
+
+SELECT clock_timestamp() AS start_time_user_friend \gset
+\echo '>> Droping table materialized view gold.dim_user_friend'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
+
+\echo '>> Loading data into gold.dim_user_friend'
+
+/*
+===============================================================================
+Materialized View: gold.dim_user_friend (Snowflake Sub-dimension)
+===============================================================================
+Script Purpose:
+    Flattens the comma-separated 'friends' JSONB column from silver.yelp_user 
+    into a normalized 1-to-many relationship table in the Gold layer.
+    Linked to dim_user using the numeric surrogate key (user_key).
+
+Dependencies:
+- gold.dim_user
+- silver.yelp_user
+===============================================================================
+*/
+CREATE MATERIALIZED VIEW gold.dim_user_friend AS
+SELECT 
+    u.user_key,
+    f.friend_id
+FROM gold.dim_user u
+CROSS JOIN LATERAL (
+    SELECT TRIM(unnest(string_to_array(u_silver.friends::text, ','))) AS friend_id
+    FROM silver.yelp_user u_silver
+    WHERE u_silver.user_id = u.user_id
+        AND u.user_id <> 'UNKNOWN'
+        AND u_silver.friends IS NOT NULL
+        AND u_silver.friends::text <> 'None'
+) f;
+
+CREATE INDEX idx_gold_dim_user_friend_user_key ON gold.dim_user_friend (user_key);
+
+SELECT (clock_timestamp() - :'start_time_user_friend') as diff_user_friend \gset
+\echo '>> Load Time:' :diff_user_friend
+
+\echo '-----------------------------------------------------'
+
+SELECT clock_timestamp() AS start_time_user_elite \gset
+\echo '>> Droping table materialized view gold.dim_user_elite'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_elite CASCADE;
+
+\echo '>> Loading data into gold.dim_user_elite'
+
+/*
+===============================================================================
+Materialized View: gold.dim_user_elite (Snowflake Sub-dimension)
+===============================================================================
+Script Purpose:
+    Flattens the 'elite' years from silver.yelp_user into a normalized 
+    1-to-many table linked via user_key.
+    
+Dependencies:
+- gold.dim_user
+- silver.yelp_user
+===============================================================================
+*/
+CREATE MATERIALIZED VIEW gold.dim_user_elite AS
+SELECT 
+    u.user_key,
+    e.elite_year::INTEGER AS elite_year
+FROM gold.dim_user u
+CROSS JOIN LATERAL (
+    SELECT TRIM(unnest(string_to_array(u_silver.elite::text, ','))) AS elite_year
+    FROM silver.yelp_user u_silver
+    WHERE u_silver.user_id = u.user_id
+        AND u.user_id <> 'UNKNOWN'
+        AND u_silver.elite IS NOT NULL
+        AND u_silver.elite::text <> ''
+        AND u_silver.elite::text <> 'None'
+) e;
+
+CREATE INDEX idx_gold_dim_user_elite_user_key ON gold.dim_user_elite (user_key);
+
+SELECT (clock_timestamp() - :'start_time_user_elite') as diff_user_elite \gset
+\echo '>> Load Time:' :diff_user_elite
+
+\echo '-----------------------------------------------------'
+
+SELECT clock_timestamp() AS start_time_business \gset
+\echo '>> Droping table materialized view gold.dim_business'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_business CASCADE;
+
+\echo '>> Loading data into gold.dim_business'
+
+/*
+===============================================================================
+Materialized View: gold.dim_business
+===============================================================================
+Script Purpose:
+    Creates the business dimension for the Gold Layer (Snowflake Schema).
+    It generates a numeric surrogate key (business_key) and includes an 
+    Unknown Member (-1) row to handle orphan records from the fact table.
+
+Dependencies:
+- silver.yelp_business
+===============================================================================
+*/
+CREATE MATERIALIZED VIEW gold.dim_business AS
+SELECT 
+    -1 AS business_key,
+    'UNKNOWN' AS business_id,
+    'UNKNOWN BUSINESS' AS name,
+    'UNKNOWN' AS address,
+    'UNKNOWN' AS city,
+    'UNKNOWN' AS state,
+    'UNKNOWN' AS postal_code,
+    NULL::NUMERIC(10, 7) AS latitude,
+    NULL::NUMERIC(10, 7) AS longitude,
+    0.0::NUMERIC(2, 1) AS stars,
+    0 AS review_count,
+    FALSE AS is_open
+
+UNION ALL
+	SELECT
+    ROW_NUMBER() OVER (ORDER BY business_id) AS business_key,
+    business_id,
+    name,
+    address,
+    city,
+    state,
+    postal_code,
+    latitude,
+    longitude,
+    stars,
+    review_count,
+    is_open
+FROM silver.yelp_business;
+
+CREATE UNIQUE INDEX idx_dim_business_key ON gold.dim_business(business_key);
+CREATE INDEX idx_dim_business_natural ON gold.dim_business(business_id);
+
+SELECT (clock_timestamp() - :'start_time_business') as diff_business \gset
+\echo '>> Load Time:' :diff_business
+
+\echo '-----------------------------------------------------'
+
+SELECT clock_timestamp() AS start_business_category \gset
+\echo '>> Droping table materialized view gold.dim_business_category'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_category CASCADE;
+
+\echo '>> Loading data into gold.dim_business_category'
+
+/*
+===============================================================================
+Materialized View: gold.dim_business_category (Snowflake Sub-dimension)
+===============================================================================
+Script Purpose:
+    Flattens the comma-separated 'categories' column from silver.yelp_business 
+    into a normalized 1-to-many relationship table in the Gold layer.
+    Linked to dim_business using the numeric surrogate key (business_key).
+
+Dependencies:
+- gold.dim_business
+- silver.yelp_business
+===============================================================================
+*/
+CREATE MATERIALIZED VIEW gold.dim_business_category AS
+SELECT 
+    b.business_key,
+    c.category_name
+FROM gold.dim_business b
+CROSS JOIN LATERAL (
+    SELECT TRIM(unnest(string_to_array(b_silver.categories::text, ','))) AS category_name
+    FROM silver.yelp_business b_silver
+    WHERE b_silver.business_id = b.business_id
+        AND b.business_id <> 'UNKNOWN'
+        AND b_silver.categories IS NOT NULL
+        AND b_silver.categories::text <> ''
+        AND b_silver.categories::text <> 'None'
+) c;
+
+CREATE UNIQUE INDEX idx_gold_dim_business_cat_key ON gold.dim_business_category (business_category_key);
+CREATE INDEX idx_gold_dim_business_cat_bkey ON gold.dim_business_category (business_key);
+CREATE INDEX idx_gold_dim_business_cat_name ON gold.dim_business_category (category_name);
+
+SELECT (clock_timestamp() - :'start_business_category') as diff_business_category \gset
+\echo '>> Load Time:' :diff_business_category
+
+\echo '-----------------------------------------------------'
+
+SELECT clock_timestamp() AS start_business_attribute \gset
+\echo '>> Droping table materialized view gold.dim_business_attribute'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_attribute CASCADE;
+
+\echo '>> Loading data into gold.dim_business_attribute'
+
+/*
+===============================================================================
+Materialized View: gold.dim_business_attribute (Snowflake Sub-dimension)
+===============================================================================
+Script Purpose:
+    Flattens the JSONB 'attributes' column from silver.yelp_business into a 
+    normalized 1-to-many key-value relationship table in the Gold layer.
+    Linked to dim_business using the numeric surrogate key (business_key).
+
+Dependencies:
+- gold.dim_business
+- silver.yelp_business
+===============================================================================
+*/
+CREATE MATERIALIZED VIEW gold.dim_business_attribute AS
+SELECT 
+    ROW_NUMBER() OVER (ORDER BY b.business_key, a.attribute_name) AS business_attribute_key,
+    b.business_key,
+    a.attribute_name,
+    a.attribute_value
+FROM gold.dim_business b
+CROSS JOIN LATERAL (
+    SELECT 
+        key AS attribute_name, 
+        value AS attribute_value
+    FROM silver.yelp_business b_silver
+    CROSS JOIN LATERAL jsonb_each_text(b_silver.attributes::jsonb)
+    WHERE b_silver.business_id = b.business_id
+        AND b.business_id <> 'UNKNOWN'
+        AND b_silver.attributes IS NOT NULL
+        AND b_silver.attributes::text <> '{}'
+        AND b_silver.attributes::text <> 'None'
+) a;
+
+CREATE UNIQUE INDEX idx_gold_dim_bus_attr_key ON gold.dim_business_attribute (business_attribute_key);
+CREATE INDEX idx_gold_dim_bus_attr_bkey ON gold.dim_business_attribute (business_key);
+CREATE INDEX idx_gold_dim_bus_attr_name ON gold.dim_business_attribute (attribute_name);
+
+SELECT (clock_timestamp() - :'start_business_attribute') as diff_business_attribute \gset
+\echo '>> Load Time:' :diff_business_attribute
+
+\echo '-----------------------------------------------------'
+
+SELECT clock_timestamp() AS start_time_review \gset
+\echo '>> Droping table materialized view gold.fact_review'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.fact_review CASCADE;
+
+\echo '>> Loading data into gold.fact_review'
+
+/*
+===============================================================================
+Materialized View: gold.fact_review
+===============================================================================
+Script Purpose:
+    Creates the fact review table for the Gold Layer by joining reviews with 
+    user and business dimensions using their surrogate keys.
+
+Dependencies:
+- gold.dim_user
+- gold.dim_business
+- silver.yelp_review
+===============================================================================
+*/
+CREATE MATERIALIZED VIEW gold.fact_review AS
+SELECT 
+    ROW_NUMBER() OVER (ORDER BY r.review_id) AS fact_review_key,
+    r.review_id,
+    u.user_key,
+    b.business_key,    
+    r.stars,
+    r.useful,
+    r.funny,
+    r.cool,
+    r.text,
+    r.date::DATE
+FROM silver.yelp_review r
+LEFT JOIN gold.dim_user u ON r.user_id = u.user_id
+LEFT JOIN gold.dim_business b ON r.business_id = b.business_id;
+
+CREATE UNIQUE INDEX idx_fact_review_key ON gold.fact_review(fact_review_key);
+CREATE INDEX idx_fact_review_review_id ON gold.fact_review(review_id);
+CREATE INDEX idx_fact_review_user_fk ON gold.fact_review(user_key);
+CREATE INDEX idx_fact_review_business_fk ON gold.fact_review(business_key);
+CREATE INDEX idx_fact_review_date ON gold.fact_review(date);
+
+SELECT (clock_timestamp() - :'start_time_review') as diff_review \gset
+\echo '>> Load Time:' :diff_review
+
+COMMIT;
+
+SELECT (clock_timestamp() - :'start_time_batch') as diff_total \gset
+\echo '====================================================='
+\echo 'Loading data into Gold Layer Completed'
+\echo 'Total Load Time:' :diff_total
+\echo '====================================================='
