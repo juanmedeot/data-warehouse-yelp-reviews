@@ -19,13 +19,6 @@ SELECT clock_timestamp() AS start_time_batch \gset
 SET synchronous_commit = OFF;
 
 \echo '-----------------------------------------------------'
- 
-SELECT clock_timestamp() AS start_time_user \gset
-\echo '>> Droping table materialized view gold.dim_user'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_user CASCADE;
-
-\echo '>> Loading data into gold.dim_user'
 
 /*
 ===============================================================================
@@ -40,6 +33,14 @@ Dependencies:
 - silver.yelp_user
 ===============================================================================
 */
+	
+SELECT clock_timestamp() AS start_time_user \gset
+\echo '>> Droping table materialized view gold.dim_user'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_user CASCADE;
+
+\echo '>> Loading data into gold.dim_user'
+
 CREATE MATERIALIZED VIEW gold.dim_user as
 SELECT 
     -1 AS user_key,
@@ -98,13 +99,6 @@ SELECT (clock_timestamp() - :'start_time_user') as diff_user \gset
 
 \echo '-----------------------------------------------------'
 
-SELECT clock_timestamp() AS start_time_user_friend \gset
-\echo '>> Droping table materialized view gold.dim_user_friend'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
-
-\echo '>> Loading data into gold.dim_user_friend'
-
 /*
 ===============================================================================
 Materialized View: gold.dim_user_friend (Snowflake Sub-dimension)
@@ -119,6 +113,14 @@ Dependencies:
 - silver.yelp_user
 ===============================================================================
 */
+	
+SELECT clock_timestamp() AS start_time_user_friend \gset
+\echo '>> Droping table materialized view gold.dim_user_friend'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
+
+\echo '>> Loading data into gold.dim_user_friend'
+
 CREATE MATERIALIZED VIEW gold.dim_user_friend AS
 SELECT 
     u.user_key,
@@ -140,13 +142,6 @@ SELECT (clock_timestamp() - :'start_time_user_friend') as diff_user_friend \gset
 
 \echo '-----------------------------------------------------'
 
-SELECT clock_timestamp() AS start_time_user_elite \gset
-\echo '>> Droping table materialized view gold.dim_user_elite'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_elite CASCADE;
-
-\echo '>> Loading data into gold.dim_user_elite'
-
 /*
 ===============================================================================
 Materialized View: gold.dim_user_elite (Snowflake Sub-dimension)
@@ -160,6 +155,14 @@ Dependencies:
 - silver.yelp_user
 ===============================================================================
 */
+
+SELECT clock_timestamp() AS start_time_user_elite \gset
+\echo '>> Droping table materialized view gold.dim_user_elite'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_elite CASCADE;
+
+\echo '>> Loading data into gold.dim_user_elite'
+
 CREATE MATERIALIZED VIEW gold.dim_user_elite AS
 SELECT 
     u.user_key,
@@ -182,13 +185,6 @@ SELECT (clock_timestamp() - :'start_time_user_elite') as diff_user_elite \gset
 
 \echo '-----------------------------------------------------'
 
-SELECT clock_timestamp() AS start_time_business \gset
-\echo '>> Droping table materialized view gold.dim_business'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_business CASCADE;
-
-\echo '>> Loading data into gold.dim_business'
-
 /*
 ===============================================================================
 Materialized View: gold.dim_business
@@ -202,6 +198,14 @@ Dependencies:
 - silver.yelp_business
 ===============================================================================
 */
+
+SELECT clock_timestamp() AS start_time_business \gset
+\echo '>> Droping table materialized view gold.dim_business'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_business CASCADE;
+
+\echo '>> Loading data into gold.dim_business'
+
 CREATE MATERIALIZED VIEW gold.dim_business AS
 SELECT 
     -1 AS business_key,
@@ -241,13 +245,6 @@ SELECT (clock_timestamp() - :'start_time_business') as diff_business \gset
 
 \echo '-----------------------------------------------------'
 
-SELECT clock_timestamp() AS start_business_category \gset
-\echo '>> Droping table materialized view gold.dim_business_category'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_category CASCADE;
-
-\echo '>> Loading data into gold.dim_business_category'
-
 /*
 ===============================================================================
 Materialized View: gold.dim_business_category (Snowflake Sub-dimension)
@@ -262,6 +259,14 @@ Dependencies:
 - silver.yelp_business
 ===============================================================================
 */
+
+SELECT clock_timestamp() AS start_business_category \gset
+\echo '>> Droping table materialized view gold.dim_business_category'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_category CASCADE;
+
+\echo '>> Loading data into gold.dim_business_category'
+
 CREATE MATERIALIZED VIEW gold.dim_business_category AS
 SELECT 
     b.business_key,
@@ -286,13 +291,6 @@ SELECT (clock_timestamp() - :'start_business_category') as diff_business_categor
 
 \echo '-----------------------------------------------------'
 
-SELECT clock_timestamp() AS start_business_attribute \gset
-\echo '>> Droping table materialized view gold.dim_business_attribute'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_attribute CASCADE;
-
-\echo '>> Loading data into gold.dim_business_attribute'
-
 /*
 ===============================================================================
 Materialized View: gold.dim_business_attribute (Snowflake Sub-dimension)
@@ -307,6 +305,14 @@ Dependencies:
 - silver.yelp_business
 ===============================================================================
 */
+
+SELECT clock_timestamp() AS start_business_attribute \gset
+\echo '>> Droping table materialized view gold.dim_business_attribute'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_attribute CASCADE;
+
+\echo '>> Loading data into gold.dim_business_attribute'
+
 CREATE MATERIALIZED VIEW gold.dim_business_attribute AS
 SELECT 
     ROW_NUMBER() OVER (ORDER BY b.business_key, a.attribute_name) AS business_attribute_key,
@@ -336,13 +342,6 @@ SELECT (clock_timestamp() - :'start_business_attribute') as diff_business_attrib
 
 \echo '-----------------------------------------------------'
 
-SELECT clock_timestamp() AS start_time_review \gset
-\echo '>> Droping table materialized view gold.fact_review'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.fact_review CASCADE;
-
-\echo '>> Loading data into gold.fact_review'
-
 /*
 ===============================================================================
 Materialized View: gold.fact_review
@@ -357,6 +356,14 @@ Dependencies:
 - silver.yelp_review
 ===============================================================================
 */
+
+SELECT clock_timestamp() AS start_time_review \gset
+\echo '>> Droping table materialized view gold.fact_review'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.fact_review CASCADE;
+
+\echo '>> Loading data into gold.fact_review'
+
 CREATE MATERIALIZED VIEW gold.fact_review AS
 SELECT 
     ROW_NUMBER() OVER (ORDER BY r.review_id) AS fact_review_key,
