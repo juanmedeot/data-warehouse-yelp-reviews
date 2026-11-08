@@ -19,7 +19,7 @@ SELECT clock_timestamp() AS start_time_batch \gset
 SET synchronous_commit = OFF;
 
 \echo '-----------------------------------------------------'
-
+ 
 /*
 ===============================================================================
 Materialized View: gold.dim_user
@@ -33,7 +33,7 @@ Dependencies:
 - silver.yelp_user
 ===============================================================================
 */
-	
+
 SELECT clock_timestamp() AS start_time_user \gset
 \echo '>> Droping table materialized view gold.dim_user'
 
@@ -113,7 +113,6 @@ Dependencies:
 - silver.yelp_user
 ===============================================================================
 */
-	
 SELECT clock_timestamp() AS start_time_user_friend \gset
 \echo '>> Droping table materialized view gold.dim_user_friend'
 
@@ -121,21 +120,31 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
 
 \echo '>> Loading data into gold.dim_user_friend'
 
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
+
 CREATE MATERIALIZED VIEW gold.dim_user_friend AS
-SELECT 
+SELECT DISTINCT 
     u.user_key,
-    f.friend_id
+    -- Limpiamos comillas dobles, simples y espacios alrededor de cada ID de amigo
+    TRIM(f.raw_friend_id, ' ''"') AS friend_user_id
 FROM gold.dim_user u
 CROSS JOIN LATERAL (
-    SELECT TRIM(unnest(string_to_array(u_silver.friends::text, ','))) AS friend_id
-    FROM silver.yelp_user u_silver
-    WHERE u_silver.user_id = u.user_id
-        AND u.user_id <> 'UNKNOWN'
-        AND u_silver.friends IS NOT NULL
-        AND u_silver.friends::text <> 'None'
+    -- 1. Tomamos el texto de amigos, 2. Le quitamos las comillas envolventes externas, 3. Partimos por coma
+    SELECT unnest(string_to_array(
+        TRIM(b_silver.friends::text, ' ''"'), 
+        ','
+    )) AS raw_friend_id
+    FROM silver.yelp_user b_silver
+    WHERE b_silver.user_id = u.user_id
+      AND u.user_id <> 'UNKNOWN'
+      AND b_silver.friends IS NOT NULL
+      AND b_silver.friends::text <> ''
+      AND b_silver.friends::text <> 'None'
 ) f;
 
-CREATE INDEX idx_gold_dim_user_friend_user_key ON gold.dim_user_friend (user_key);
+CREATE UNIQUE INDEX idx_gold_dim_user_friend_pk ON gold.dim_user_friend (user_key, friend_user_id);
+-- Índice secundario para consultas inversas
+CREATE INDEX idx_gold_dim_user_friend_fid ON gold.dim_user_friend (friend_user_id);
 
 SELECT (clock_timestamp() - :'start_time_user_friend') as diff_user_friend \gset
 \echo '>> Load Time:' :diff_user_friend
@@ -147,15 +156,15 @@ SELECT (clock_timestamp() - :'start_time_user_friend') as diff_user_friend \gset
 Materialized View: gold.dim_user_elite (Snowflake Sub-dimension)
 ===============================================================================
 Script Purpose:
-    Flattens the 'elite' years from silver.yelp_user into a normalized 
-    1-to-many table linked via user_key.
+    Flattens the comma-separated 'elite' years from silver.yelp_user into a 
+    normalized 1-to-many table linked via user_key. Includes text cleaning
+    and distinct filtering to prevent duplicate key violations.
     
 Dependencies:
 - gold.dim_user
 - silver.yelp_user
 ===============================================================================
 */
-
 SELECT clock_timestamp() AS start_time_user_elite \gset
 \echo '>> Droping table materialized view gold.dim_user_elite'
 
@@ -164,12 +173,16 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_elite CASCADE;
 \echo '>> Loading data into gold.dim_user_elite'
 
 CREATE MATERIALIZED VIEW gold.dim_user_elite AS
-SELECT 
+SELECT DISTINCT 
     u.user_key,
-    e.elite_year::INTEGER AS elite_year
+    -- Limpiamos comillas, espacios y casteamos directamente a INTEGER
+    TRIM(e.raw_elite_year, ' ''"')::INTEGER AS elite_year
 FROM gold.dim_user u
 CROSS JOIN LATERAL (
-    SELECT TRIM(unnest(string_to_array(u_silver.elite::text, ','))) AS elite_year
+    SELECT unnest(string_to_array(
+        TRIM(u_silver.elite::text, ' ''"'), 
+        ','
+    )) AS raw_elite_year
     FROM silver.yelp_user u_silver
     WHERE u_silver.user_id = u.user_id
         AND u.user_id <> 'UNKNOWN'
@@ -178,7 +191,12 @@ CROSS JOIN LATERAL (
         AND u_silver.elite::text <> 'None'
 ) e;
 
-CREATE INDEX idx_gold_dim_user_elite_user_key ON gold.dim_user_elite (user_key);
+
+
+-- Clave Primaria Compuesta Única para evitar duplicados por usuario y año de elite
+CREATE UNIQUE INDEX idx_gold_dim_user_elite_pk ON gold.dim_user_elite (user_key, elite_year);
+-- Índice secundario para consultas inversas (ej: buscar qué usuarios fueron elite en el año X)
+CREATE INDEX idx_gold_dim_user_elite_year ON gold.dim_user_elite (elite_year);
 
 SELECT (clock_timestamp() - :'start_time_user_elite') as diff_user_elite \gset
 \echo '>> Load Time:' :diff_user_elite
@@ -222,7 +240,8 @@ SELECT
     FALSE AS is_open
 
 UNION ALL
-	SELECT
+
+SELECT
     ROW_NUMBER() OVER (ORDER BY business_id) AS business_key,
     business_id,
     name,
@@ -234,7 +253,7 @@ UNION ALL
     longitude,
     stars,
     review_count,
-    is_open
+    is_open::BOOLEAN AS is_open
 FROM silver.yelp_business;
 
 CREATE UNIQUE INDEX idx_dim_business_key ON gold.dim_business(business_key);
@@ -268,12 +287,16 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_category CASCADE;
 \echo '>> Loading data into gold.dim_business_category'
 
 CREATE MATERIALIZED VIEW gold.dim_business_category AS
-SELECT 
+SELECT DISTINCT 
     b.business_key,
-    c.category_name
+    -- Limpieza profunda de comillas y espacios alrededor de cada categoría
+    TRIM(c.raw_category_name, ' ''"') AS category_name
 FROM gold.dim_business b
 CROSS JOIN LATERAL (
-    SELECT TRIM(unnest(string_to_array(b_silver.categories::text, ','))) AS category_name
+    SELECT unnest(string_to_array(
+        TRIM(b_silver.categories::text, ' ''"'), 
+        ','
+    )) AS raw_category_name
     FROM silver.yelp_business b_silver
     WHERE b_silver.business_id = b.business_id
         AND b.business_id <> 'UNKNOWN'
@@ -282,9 +305,12 @@ CROSS JOIN LATERAL (
         AND b_silver.categories::text <> 'None'
 ) c;
 
-CREATE UNIQUE INDEX idx_gold_dim_business_cat_key ON gold.dim_business_category (business_category_key);
-CREATE INDEX idx_gold_dim_business_cat_bkey ON gold.dim_business_category (business_key);
+-- Clave Primaria Compuesta Única (Previene duplicados por negocio y categoría)
+CREATE UNIQUE INDEX idx_gold_dim_business_cat_pk ON gold.dim_business_category (business_key, category_name);
+
+-- Índice secundario para optimizar búsquedas masivas por categoría (ej: filtrar todos los "Restaurants")
 CREATE INDEX idx_gold_dim_business_cat_name ON gold.dim_business_category (category_name);
+
 
 SELECT (clock_timestamp() - :'start_business_category') as diff_business_category \gset
 \echo '>> Load Time:' :diff_business_category
@@ -314,31 +340,94 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_attribute CASCADE;
 \echo '>> Loading data into gold.dim_business_attribute'
 
 CREATE MATERIALIZED VIEW gold.dim_business_attribute AS
-SELECT 
-    ROW_NUMBER() OVER (ORDER BY b.business_key, a.attribute_name) AS business_attribute_key,
+SELECT DISTINCT 
     b.business_key,
     a.attribute_name,
     a.attribute_value
 FROM gold.dim_business b
 CROSS JOIN LATERAL (
     SELECT 
-        key AS attribute_name, 
-        value AS attribute_value
+        kv.key AS attribute_name, 
+        kv.value AS attribute_value
     FROM silver.yelp_business b_silver
-    CROSS JOIN LATERAL jsonb_each_text(b_silver.attributes::jsonb)
+    CROSS JOIN LATERAL jsonb_each_text(b_silver.attributes::jsonb) kv
     WHERE b_silver.business_id = b.business_id
         AND b.business_id <> 'UNKNOWN'
         AND b_silver.attributes IS NOT NULL
-        AND b_silver.attributes::text <> '{}'
+        AND b_silver.attributes::text <> ''
         AND b_silver.attributes::text <> 'None'
+        AND b_silver.attributes::text <> '{}'
+        -- Blindaje vital: Evita que falle si el JSON es un array u otro tipo de dato
+        AND jsonb_typeof(b_silver.attributes::jsonb) = 'object'
 ) a;
 
-CREATE UNIQUE INDEX idx_gold_dim_bus_attr_key ON gold.dim_business_attribute (business_attribute_key);
-CREATE INDEX idx_gold_dim_bus_attr_bkey ON gold.dim_business_attribute (business_key);
-CREATE INDEX idx_gold_dim_bus_attr_name ON gold.dim_business_attribute (attribute_name);
+-- Clave Primaria Compuesta Única (Previene duplicados por negocio y atributo)
+CREATE UNIQUE INDEX idx_gold_dim_business_attr_pk ON gold.dim_business_attribute (business_key, attribute_name);
+
+-- Índice secundario para optimizar búsquedas analíticas por tipo de atributo (ej. WiFi, Parking)
+CREATE INDEX idx_gold_dim_business_attr_name ON gold.dim_business_attribute (attribute_name);
 
 SELECT (clock_timestamp() - :'start_business_attribute') as diff_business_attribute \gset
 \echo '>> Load Time:' :diff_business_attribute
+
+\echo '-----------------------------------------------------'
+
+/*
+===============================================================================
+Materialized View: gold.dim_business_hours (Snowflake Sub-dimension)
+===============================================================================
+Script Purpose:
+    Flattens the JSONB 'hours' column from silver.yelp_business into a 
+    normalized 1-to-many relationship table in the Gold layer.
+    Extracts open/close times, handles midnight-crossing schedules, 
+    filters out closed days (0:0-0:0), and links to dim_business using 
+    the numeric surrogate key (business_key).
+
+Dependencies:
+- gold.dim_business
+- silver.yelp_business
+===============================================================================
+*/
+SELECT clock_timestamp() AS start_time_business_hours \gset
+\echo '>> Droping table materialized view gold.dim_business_hours'
+
+DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_hours CASCADE;
+
+\echo '>> Loading data into gold.dim_business_hours'
+
+CREATE MATERIALIZED VIEW gold.dim_business_hours AS
+SELECT DISTINCT
+    b.business_key,
+    h.day_of_week,
+    h.open_time,
+    h.close_time,
+    (h.close_time < h.open_time) AS closes_next_day
+FROM gold.dim_business b
+CROSS JOIN LATERAL (
+    SELECT 
+        kv.key AS day_of_week,
+        split_part(kv.value, '-', 1)::TIME AS open_time,
+        split_part(kv.value, '-', 2)::TIME AS close_time
+    FROM silver.yelp_business b_silver
+    CROSS JOIN LATERAL jsonb_each_text(b_silver.hours::jsonb) kv
+    WHERE b_silver.business_id = b.business_id
+      AND b.business_id <> 'UNKNOWN'
+      AND b_silver.hours IS NOT NULL
+      AND b_silver.hours::text <> '{}'
+      AND b_silver.hours::text <> 'None'
+      -- Filtramos los días donde el negocio está cerrado (0:0-0:0 o variaciones equivalentes)
+      AND kv.value NOT IN ('0:0-0:0', '0:0-0', '0-0', '0:00-0:00')
+      AND jsonb_typeof(b_silver.hours::jsonb) = 'object'
+) h;
+
+-- Clave Primaria Compuesta Única (Un negocio solo tiene una franja horaria válida por día)
+CREATE UNIQUE INDEX idx_gold_dim_business_hours_pk ON gold.dim_business_hours (business_key, day_of_week);
+
+-- Índice secundario para optimizar filtros analíticos por día en tableros de BI
+CREATE INDEX idx_gold_dim_business_hours_day ON gold.dim_business_hours (day_of_week);
+
+SELECT (clock_timestamp() - :'start_time_business_hours') as diff_business_hours \gset
+\echo '>> Load Time:' :diff_business_hours
 
 \echo '-----------------------------------------------------'
 
@@ -356,6 +445,7 @@ Dependencies:
 - silver.yelp_review
 ===============================================================================
 */
+
 
 SELECT clock_timestamp() AS start_time_review \gset
 \echo '>> Droping table materialized view gold.fact_review'
