@@ -5,9 +5,6 @@ Gold Layer - Yelp Data Warehouse (PostgreSQL)
 Strategy: Materialized Views (Full Truncate & Load)
 Model: Snowflake Schema with Surrogate Keys
 
-- HOW TO RUN
- This script uses psql meta-commands (\echo, \gset).
-
  From terminal:
    psql -h <host> -U <user> -d datawarehouse -f "path\data_ingestion_gold.sql"
 ===============================================================================
@@ -125,8 +122,6 @@ SELECT clock_timestamp() AS start_time_user_friend \gset
 DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
 
 \echo '>> Loading data into gold.dim_user_friend'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
 
 CREATE MATERIALIZED VIEW gold.dim_user_friend AS
 SELECT DISTINCT 
