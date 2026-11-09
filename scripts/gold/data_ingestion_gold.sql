@@ -4,6 +4,12 @@ Gold Layer - Yelp Data Warehouse (PostgreSQL)
 ===============================================================================
 Strategy: Materialized Views (Full Truncate & Load)
 Model: Snowflake Schema with Surrogate Keys
+
+- HOW TO RUN
+ This script uses psql meta-commands (\echo, \gset).
+
+ From terminal:
+   psql -h <host> -U <user> -d datawarehouse -f "path\data_ingestion_gold.sql"
 ===============================================================================
 */
 
