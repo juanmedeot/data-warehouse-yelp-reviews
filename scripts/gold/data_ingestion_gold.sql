@@ -1,13 +1,42 @@
-/*
-===============================================================================
-Gold Layer - Yelp Data Warehouse (PostgreSQL)
-===============================================================================
-Strategy: Materialized Views (Full Truncate & Load)
-Model: Snowflake Schema with Surrogate Keys
+/* 
+=====================================================
+Gold Layer Transformation & Loading Script
+=====================================================
 
- From terminal:
+PURPOSE
+This script performs the transformation from the Silver layer 
+to the Gold layer in the Yelp Data Warehouse.
+
+It structures the cleaned data into an optimized Snowflake schema 
+using Materialized Views, incorporating surrogate keys, dimensional 
+hierarchies, and robust handling for complex JSON attributes, 
+business hours, and referential integrity.
+
+WARNING: This script drops and recreates all gold layer materialized views 
+to ensure a fully refreshed analytical state.
+
+- WHAT THIS SCRIPT DOES
+
+1. Snowflake Schema Modeling:
+   - Builds normalized dimensional tables (business, user, friends, elite, categories, attributes, hours) and fact tables (reviews).
+   - Implements surrogate keys (`business_key`, `user_key`, `fact_review_key`) to power high-performance BI reporting.
+
+2. Complex Data Parsing & Anomaly Handling:
+   - Flattens JSONB fields (attributes, hours) and comma-separated string arrays (categories, friends, elite).
+   - Resolves business hours edge cases, distinguishing true 24/7 operations from isolated closed/rest days (`0:0-0:0`).
+   - Calculates midnight-crossing shifts (`closes_next_day`).
+
+3. Referential Integrity & Default Fallbacks:
+   - Assigns default `-1` surrogate keys (UNKNOWN) to orphan references in fact tables using `COALESCE`, preventing broken joins.
+
+- HOW TO RUN
+This script uses psql meta-commands (\echo, \gset).
+
+From terminal:
+
    psql -h <host> -U <user> -d datawarehouse -f "path\data_ingestion_gold.sql"
-===============================================================================
+
+=====================================================
 */
 
 \set ON_ERROR_STOP on
