@@ -459,8 +459,8 @@ CREATE MATERIALIZED VIEW gold.fact_review AS
 SELECT 
     ROW_NUMBER() OVER (ORDER BY r.review_id) AS fact_review_key,
     r.review_id,
-    u.user_key,
-    b.business_key,    
+    COALESCE(u.user_key, -1)     AS user_key,
+    COALESCE(b.business_key, -1) AS business_key, 
     r.stars,
     r.useful,
     r.funny,
