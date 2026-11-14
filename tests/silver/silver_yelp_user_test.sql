@@ -32,7 +32,6 @@ How to run:
 \echo '====================================================='
 
 -- 1. Check bronze and silver # of rows
--- Identifica si hubo pérdida de registros durante la migración o la ingesta.
 \echo '>> Test 1: Row Count Comparison (Bronze vs Silver)'
 \echo '>> Expected Result: 0'
 SELECT COUNT(*) - (SELECT COUNT(*) FROM bronze.yelp_user) AS bronze_silver_difference 
@@ -41,7 +40,6 @@ FROM silver.yelp_user;
 ---
 
 -- 2. Check duplicates in user_id field
--- Garantiza la unicidad de la Clave Primaria lógica del negocio.
 \echo '>> Test 2: Duplicate check on user_id'
 \echo '>> Expected Result: 0'
 SELECT COUNT(*) AS duplicate_users_count
@@ -55,7 +53,6 @@ FROM (
 ---
 
 -- 3A. Check missing values and JSONB leaks (Critical)
--- Valida que campos mandatorios no sean nulos ni contengan strings residuales "sucios".
 \echo '>> Test 3A: Critical Missing Values and JSONB Leaks'
 \echo '>> Expected Result: 0'
 SELECT COUNT(*) AS critical_missing_or_leaks 
@@ -69,7 +66,6 @@ WHERE
 ---
 
 -- 3B. Check % of NULL values in metric fields
--- Monitorea el volumen de datos corruptos neutralizados en la transformación.
 \echo '>> Test 3B: Percentage of NULL values in Metric Fields'
 \echo '>> Expected Result: < 0.1%'
 SELECT ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM silver.yelp_user), 4) AS perc_null_metrics
@@ -96,7 +92,6 @@ WHERE
 ---
 
 -- 4. Check boundaries and consistency in metric fields
--- Valida que la lógica defensiva haya atrapado con éxito cualquier número negativo.
 \echo '>> Test 4: Boundary Check for Metric Fields (Negative Values)'
 \echo '>> Expected Result: 0'
 SELECT COUNT(*) AS negative_metrics_count 
@@ -110,7 +105,6 @@ WHERE
 
 ---
 -- 5. Check unwanted spaces
--- Verifica el correcto funcionamiento de las funciones TRIM aplicadas.
 \echo '>> Test 5: Leading or Trailing Spaces in Strings'
 \echo '>> Expected Result: 0'
 SELECT COUNT(*) AS spaces_rows 
@@ -118,7 +112,6 @@ FROM silver.yelp_user
 WHERE TRIM(name) <> name OR TRIM(user_id) <> user_id;
 
 -- 6. Check boundaries and consistency in yelping_since field
--- Confirma fechas lógicas de negocio (Yelp se fundó en Octubre de 2004 y nadie puede registrarse en el futuro).
 \echo '>> Test 6: Date Boundary Check (yelping_since)'
 \echo '>> Expected Result: 0'
 SELECT COUNT(*) AS invalid_date_count 
@@ -128,7 +121,6 @@ WHERE yelping_since < '2004-10-01' OR yelping_since > CURRENT_DATE;
 ---
 
 -- 7. Check boundaries and consistency in average_stars field
--- Verifica que el rango numérico decimal de las estrellas se mantenga strictly entre 1.00 y 5.00.
 \echo '>> Test 7: Boundary Check for average_stars (1.00 to 5.00)'
 \echo '>> Expected Result: 0'
 SELECT COUNT(*) AS invalid_stars_count 
