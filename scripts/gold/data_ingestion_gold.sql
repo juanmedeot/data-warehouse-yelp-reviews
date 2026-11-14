@@ -155,11 +155,9 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_friend CASCADE;
 CREATE MATERIALIZED VIEW gold.dim_user_friend AS
 SELECT DISTINCT 
     u.user_key,
-    -- Limpiamos comillas dobles, simples y espacios alrededor de cada ID de amigo
     TRIM(f.raw_friend_id, ' ''"') AS friend_user_id
 FROM gold.dim_user u
 CROSS JOIN LATERAL (
-    -- 1. Tomamos el texto de amigos, 2. Le quitamos las comillas envolventes externas, 3. Partimos por coma
     SELECT unnest(string_to_array(
         TRIM(b_silver.friends::text, ' ''"'), 
         ','
@@ -173,7 +171,6 @@ CROSS JOIN LATERAL (
 ) f;
 
 CREATE UNIQUE INDEX idx_gold_dim_user_friend_pk ON gold.dim_user_friend (user_key, friend_user_id);
--- Índice secundario para consultas inversas
 CREATE INDEX idx_gold_dim_user_friend_fid ON gold.dim_user_friend (friend_user_id);
 
 SELECT (clock_timestamp() - :'start_time_user_friend') as diff_user_friend \gset
@@ -205,7 +202,6 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_user_elite CASCADE;
 CREATE MATERIALIZED VIEW gold.dim_user_elite AS
 SELECT DISTINCT 
     u.user_key,
-    -- Limpiamos comillas, espacios y casteamos directamente a INTEGER
     TRIM(e.raw_elite_year, ' ''"')::INTEGER AS elite_year
 FROM gold.dim_user u
 CROSS JOIN LATERAL (
@@ -223,9 +219,7 @@ CROSS JOIN LATERAL (
 
 
 
--- Clave Primaria Compuesta Única para evitar duplicados por usuario y año de elite
 CREATE UNIQUE INDEX idx_gold_dim_user_elite_pk ON gold.dim_user_elite (user_key, elite_year);
--- Índice secundario para consultas inversas (ej: buscar qué usuarios fueron elite en el año X)
 CREATE INDEX idx_gold_dim_user_elite_year ON gold.dim_user_elite (elite_year);
 
 SELECT (clock_timestamp() - :'start_time_user_elite') as diff_user_elite \gset
@@ -319,7 +313,6 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_category CASCADE;
 CREATE MATERIALIZED VIEW gold.dim_business_category AS
 SELECT DISTINCT 
     b.business_key,
-    -- Limpieza profunda de comillas y espacios alrededor de cada categoría
     TRIM(c.raw_category_name, ' ''"') AS category_name
 FROM gold.dim_business b
 CROSS JOIN LATERAL (
@@ -335,10 +328,7 @@ CROSS JOIN LATERAL (
         AND b_silver.categories::text <> 'None'
 ) c;
 
--- Clave Primaria Compuesta Única (Previene duplicados por negocio y categoría)
 CREATE UNIQUE INDEX idx_gold_dim_business_cat_pk ON gold.dim_business_category (business_key, category_name);
-
--- Índice secundario para optimizar búsquedas masivas por categoría (ej: filtrar todos los "Restaurants")
 CREATE INDEX idx_gold_dim_business_cat_name ON gold.dim_business_category (category_name);
 
 
@@ -387,14 +377,10 @@ CROSS JOIN LATERAL (
         AND b_silver.attributes::text <> ''
         AND b_silver.attributes::text <> 'None'
         AND b_silver.attributes::text <> '{}'
-        -- Blindaje vital: Evita que falle si el JSON es un array u otro tipo de dato
         AND jsonb_typeof(b_silver.attributes::jsonb) = 'object'
 ) a;
 
--- Clave Primaria Compuesta Única (Previene duplicados por negocio y atributo)
 CREATE UNIQUE INDEX idx_gold_dim_business_attr_pk ON gold.dim_business_attribute (business_key, attribute_name);
-
--- Índice secundario para optimizar búsquedas analíticas por tipo de atributo (ej. WiFi, Parking)
 CREATE INDEX idx_gold_dim_business_attr_name ON gold.dim_business_attribute (attribute_name);
 
 SELECT (clock_timestamp() - :'start_business_attribute') as diff_business_attribute \gset
@@ -445,15 +431,11 @@ CROSS JOIN LATERAL (
       AND b_silver.hours IS NOT NULL
       AND b_silver.hours::text <> '{}'
       AND b_silver.hours::text <> 'None'
-      -- Filtramos los días donde el negocio está cerrado (0:0-0:0 o variaciones equivalentes)
       AND kv.value NOT IN ('0:0-0:0', '0:0-0', '0-0', '0:00-0:00')
       AND jsonb_typeof(b_silver.hours::jsonb) = 'object'
 ) h;
 
--- Clave Primaria Compuesta Única (Un negocio solo tiene una franja horaria válida por día)
 CREATE UNIQUE INDEX idx_gold_dim_business_hours_pk ON gold.dim_business_hours (business_key, day_of_week);
-
--- Índice secundario para optimizar filtros analíticos por día en tableros de BI
 CREATE INDEX idx_gold_dim_business_hours_day ON gold.dim_business_hours (day_of_week);
 
 SELECT (clock_timestamp() - :'start_time_business_hours') as diff_business_hours \gset
