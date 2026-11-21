@@ -9,7 +9,7 @@ to the Gold layer in the Yelp Data Warehouse.
 
 It structures the cleaned data into an optimized Snowflake schema 
 using Materialized Views, incorporating surrogate keys, dimensional 
-hierarchies, and robust handling for complex JSON attributes, 
+hierarchies, and robust handling for complex JSON, 
 business hours, and referential integrity.
 
 WARNING: This script drops and recreates all gold layer materialized views 
@@ -18,11 +18,11 @@ to ensure a fully refreshed analytical state.
 - WHAT THIS SCRIPT DOES
 
 1. Snowflake Schema Modeling:
-   - Builds normalized dimensional tables (business, user, friends, elite, categories, attributes, hours) and fact tables (reviews).
+   - Builds normalized dimensional tables (business, user, friends, elite, categories, hours) and fact tables (reviews).
    - Implements surrogate keys (`business_key`, `user_key`, `fact_review_key`) to power high-performance BI reporting.
 
 2. Complex Data Parsing & Anomaly Handling:
-   - Flattens JSONB fields (attributes, hours) and comma-separated string arrays (categories, friends, elite).
+   - Flattens JSONB fields (hours) and comma-separated string arrays (categories, friends, elite).
    - Resolves business hours edge cases, distinguishing true 24/7 operations from isolated closed/rest days (`0:0-0:0`).
    - Calculates midnight-crossing shifts (`closes_next_day`).
 
@@ -334,57 +334,6 @@ CREATE INDEX idx_gold_dim_business_cat_name ON gold.dim_business_category (categ
 
 SELECT (clock_timestamp() - :'start_business_category') as diff_business_category \gset
 \echo '>> Load Time:' :diff_business_category
-
-\echo '-----------------------------------------------------'
-
-/*
-===============================================================================
-Materialized View: gold.dim_business_attribute (Snowflake Sub-dimension)
-===============================================================================
-Script Purpose:
-    Flattens the JSONB 'attributes' column from silver.yelp_business into a 
-    normalized 1-to-many key-value relationship table in the Gold layer.
-    Linked to dim_business using the numeric surrogate key (business_key).
-
-Dependencies:
-- gold.dim_business
-- silver.yelp_business
-===============================================================================
-*/
-
-SELECT clock_timestamp() AS start_business_attribute \gset
-\echo '>> Droping table materialized view gold.dim_business_attribute'
-
-DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_attribute CASCADE;
-
-\echo '>> Loading data into gold.dim_business_attribute'
-
-CREATE MATERIALIZED VIEW gold.dim_business_attribute AS
-SELECT DISTINCT 
-    b.business_key,
-    a.attribute_name,
-    a.attribute_value
-FROM gold.dim_business b
-CROSS JOIN LATERAL (
-    SELECT 
-        kv.key AS attribute_name, 
-        kv.value AS attribute_value
-    FROM silver.yelp_business b_silver
-    CROSS JOIN LATERAL jsonb_each_text(b_silver.attributes::jsonb) kv
-    WHERE b_silver.business_id = b.business_id
-        AND b.business_id <> 'UNKNOWN'
-        AND b_silver.attributes IS NOT NULL
-        AND b_silver.attributes::text <> ''
-        AND b_silver.attributes::text <> 'None'
-        AND b_silver.attributes::text <> '{}'
-        AND jsonb_typeof(b_silver.attributes::jsonb) = 'object'
-) a;
-
-CREATE UNIQUE INDEX idx_gold_dim_business_attr_pk ON gold.dim_business_attribute (business_key, attribute_name);
-CREATE INDEX idx_gold_dim_business_attr_name ON gold.dim_business_attribute (attribute_name);
-
-SELECT (clock_timestamp() - :'start_business_attribute') as diff_business_attribute \gset
-\echo '>> Load Time:' :diff_business_attribute
 
 \echo '-----------------------------------------------------'
 
