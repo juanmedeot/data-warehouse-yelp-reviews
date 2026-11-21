@@ -19,7 +19,7 @@ to ensure a fully refreshed analytical state.
 
 1. Snowflake Schema Modeling:
    - Builds normalized dimensional tables (business, user, friends, elite, categories, hours) and fact tables (reviews).
-   - Implements surrogate keys (`business_key`, `user_key`, `fact_review_key`) to power high-performance BI reporting.
+   - Implements surrogate keys (`business_key`, `user_key`, `review_key`) to power high-performance BI reporting.
 
 2. Complex Data Parsing & Anomaly Handling:
    - Flattens JSONB fields (hours) and comma-separated string arrays (categories, friends, elite).
@@ -417,7 +417,7 @@ DROP MATERIALIZED VIEW IF EXISTS gold.fact_review CASCADE;
 
 CREATE MATERIALIZED VIEW gold.fact_review AS
 SELECT 
-    ROW_NUMBER() OVER (ORDER BY r.review_id) AS fact_review_key,
+    ROW_NUMBER() OVER (ORDER BY r.review_id) AS review_key,
     r.review_id,
     COALESCE(u.user_key, -1)     AS user_key,
     COALESCE(b.business_key, -1) AS business_key, 
@@ -431,7 +431,7 @@ FROM silver.yelp_review r
 LEFT JOIN gold.dim_user u ON r.user_id = u.user_id
 LEFT JOIN gold.dim_business b ON r.business_id = b.business_id;
 
-CREATE UNIQUE INDEX idx_fact_review_key ON gold.fact_review(fact_review_key);
+CREATE UNIQUE INDEX idx_fact_review_key ON gold.fact_review(review_key);
 CREATE INDEX idx_fact_review_review_id ON gold.fact_review(review_id);
 CREATE INDEX idx_fact_review_user_fk ON gold.fact_review(user_key);
 CREATE INDEX idx_fact_review_business_fk ON gold.fact_review(business_key);
