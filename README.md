@@ -84,7 +84,7 @@ Run the scripts sequentially from the terminal using `psql`:
 # 1. Initialize database and schemas (bronze, silver, gold)
 psql -h <host> -U <user> -d postgres -f "scripts/init.sql"
 
-# 2. Bronze Layer: Create tables and ingest raw JSON datasets
+# 2. Bronze Layer: Create tables and ingest raw JSON datasets (define dataset local directory in data_ingestion_bronze.sql first)
 psql -h <host> -U <user> -d datawarehouse -f "scripts/bronze/ddl_bronze.sql"
 psql -h <host> -U <user> -d datawarehouse -f "scripts/bronze/data_ingestion_bronze.sql"
 
