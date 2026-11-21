@@ -361,31 +361,55 @@ DROP MATERIALIZED VIEW IF EXISTS gold.dim_business_hours CASCADE;
 \echo '>> Loading data into gold.dim_business_hours'
 
 CREATE MATERIALIZED VIEW gold.dim_business_hours AS
-SELECT DISTINCT
+WITH days AS (
+    SELECT
+        s.business_id,
+        kv.key   AS day_name,
+        kv.value AS hours_range,
+        (kv.value IN ('0:0-0:0', '0:0-0', '0-0', '0:00-0:00')) AS is_zero_day
+    FROM silver.yelp_business s
+    CROSS JOIN LATERAL jsonb_each_text(s.hours::jsonb) kv
+    WHERE s.hours IS NOT NULL
+      AND s.hours::text NOT IN ('', 'None', '{}')
+      AND jsonb_typeof(s.hours::jsonb) = 'object'
+),
+flagged AS (
+    SELECT *,
+           count(*) FILTER (WHERE is_zero_day) OVER (PARTITION BY business_id) AS zero_days
+    FROM days
+)
+SELECT
     b.business_key,
-    h.day_of_week,
-    h.open_time,
-    h.close_time,
-    (h.close_time < h.open_time) AS closes_next_day
-FROM gold.dim_business b
+    CASE f.day_name
+        WHEN 'Monday' THEN 1 WHEN 'Tuesday'  THEN 2 WHEN 'Wednesday' THEN 3
+        WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday'  THEN 6
+        WHEN 'Sunday'   THEN 7
+    END AS day_number,
+    f.day_name AS day_of_week,
+    t.open_time,
+    t.close_time,
+    (t.close_time < t.open_time) AS closes_next_day,
+    f.is_zero_day AS is_24h,
+    CASE
+        WHEN f.is_zero_day THEN 24.0
+        WHEN t.close_time < t.open_time
+             THEN EXTRACT(EPOCH FROM (t.close_time - t.open_time)) / 3600 + 24
+        ELSE      EXTRACT(EPOCH FROM (t.close_time - t.open_time)) / 3600
+    END::NUMERIC(4, 2) AS open_duration_hours
+FROM flagged f
+JOIN gold.dim_business b ON b.business_id = f.business_id
 CROSS JOIN LATERAL (
-    SELECT 
-        kv.key AS day_of_week,
-        split_part(kv.value, '-', 1)::TIME AS open_time,
-        split_part(kv.value, '-', 2)::TIME AS close_time
-    FROM silver.yelp_business b_silver
-    CROSS JOIN LATERAL jsonb_each_text(b_silver.hours::jsonb) kv
-    WHERE b_silver.business_id = b.business_id
-      AND b.business_id <> 'UNKNOWN'
-      AND b_silver.hours IS NOT NULL
-      AND b_silver.hours::text <> '{}'
-      AND b_silver.hours::text <> 'None'
-      AND kv.value NOT IN ('0:0-0:0', '0:0-0', '0-0', '0:00-0:00')
-      AND jsonb_typeof(b_silver.hours::jsonb) = 'object'
-) h;
+    SELECT
+        CASE WHEN f.is_zero_day THEN TIME '00:00'
+             ELSE split_part(f.hours_range, '-', 1)::TIME END AS open_time,
+        CASE WHEN f.is_zero_day THEN TIME '00:00'
+             ELSE split_part(f.hours_range, '-', 2)::TIME END AS close_time
+) t
+--Threshold: 1 day 0:0-0:0 is "24 h" if business has 5 or more; if not, is "closed" (no row)
+WHERE NOT f.is_zero_day OR f.zero_days >= 5;
 
-CREATE UNIQUE INDEX idx_gold_dim_business_hours_pk ON gold.dim_business_hours (business_key, day_of_week);
-CREATE INDEX idx_gold_dim_business_hours_day ON gold.dim_business_hours (day_of_week);
+CREATE UNIQUE INDEX idx_gold_dim_business_hours_pk ON gold.dim_business_hours (business_key, day_number);
+CREATE INDEX idx_gold_dim_business_hours_day ON gold.dim_business_hours (day_number);
 
 SELECT (clock_timestamp() - :'start_time_business_hours') as diff_business_hours \gset
 \echo '>> Load Time:' :diff_business_hours
